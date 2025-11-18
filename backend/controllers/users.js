@@ -1,5 +1,6 @@
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 module.exports.getAllUsers = (req, res) => {
   User.find({})
@@ -89,3 +90,62 @@ module.exports.updateUserAvatar = (req, res) => {
       res.status(500).send({ message: "Error del servidor" });
     });
 }; //Verificado//
+
+module.exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email }).select("+password");
+
+    if (!user) {
+      return res
+        .status(401)
+        .send({ message: "Contraseña o correo electrónico incorrecto" });
+    }
+
+    const matched = await bcrypt.compare(password, user.password);
+
+    if (!matched) {
+      return res
+        .status(401)
+        .send({ message: "Contraseña o correo electrónico incorrecto" });
+    }
+
+    const token = jwt.sign({ _id: user._id }, "string-random", {
+      expiresIn: "7d",
+    });
+
+    res.send({ token });
+  } catch (err) {
+    res.status(500).send({ message: "Error en el servidor" });
+  }
+};
+
+// module.exports.login = (req, res) => {
+//   const { email, password } = req.body;
+//   User.findOne({ email })
+//     .select("+password") //recordar que esto es para forzar a Mongoose a dar el password
+//     .then((user) => {
+//       if (!user) {
+//         return Promise.reject(
+//           new Error("Contraseña o correo electrónico incorrecto")
+//         );
+//       }
+//       return bcrypt
+//         .compare(password, user.password)
+//         .then((matched) => {
+//           if (!matched) {
+//             return Promise.reject(
+//               new Error("Contraseña o correo electrónico incorrecto")
+//             );
+//           }
+//           const token = jwt.sign({ _id: user._id }, "string-random", {
+//             expiresIn: "7d",
+//           });
+//           res.send({ token });
+//         })
+//         .catch((err) => {
+//           res.status(401).send({ message: err.message });
+//         });
+//     });
+// };
