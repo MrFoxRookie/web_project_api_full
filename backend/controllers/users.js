@@ -94,27 +94,21 @@ module.exports.updateUserAvatar = (req, res) => {
 module.exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const user = await User.findOne({ email }).select("+password");
-
     if (!user) {
       return res
         .status(401)
         .send({ message: "Contraseña o correo electrónico incorrecto" });
     }
-
     const matched = await bcrypt.compare(password, user.password);
-
     if (!matched) {
       return res
         .status(401)
         .send({ message: "Contraseña o correo electrónico incorrecto" });
     }
-
     const token = jwt.sign({ _id: user._id }, "string-random", {
       expiresIn: "7d",
     });
-
     res.send({ token });
   } catch (err) {
     res.status(500).send({ message: "Error en el servidor" });
