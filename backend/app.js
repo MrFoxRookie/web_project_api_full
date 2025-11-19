@@ -22,14 +22,6 @@ app.use(express.json());
 app.post("/signin", login);
 app.post("/signup", createUser);
 
-// app.use((req, res, next) => {
-//   req.user = {
-//     _id: "68ed695234846756829d51b2",
-//   };
-
-//   next();
-// });
-
 app.use(auth);
 
 app.use("/", usersRouter);
