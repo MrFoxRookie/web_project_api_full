@@ -19,7 +19,7 @@ module.exports.getUser = (req, res) => {
           .send({ message: "Id no coincide con ningún usuario" });
       }
       if (err.name === "CastError") {
-        return res.status(400).send({ message: "Formato del Id inválido" });
+        return res.status(400).send({ message: "Formato del Id inválido3" });
       }
       res.status(500).send({ message: "Error del servidor" });
     });
@@ -110,6 +110,18 @@ module.exports.login = async (req, res) => {
       expiresIn: "7d",
     });
     res.send({ token });
+  } catch (err) {
+    res.status(500).send({ message: "Error en el servidor" });
+  }
+};
+
+module.exports.getCurrentUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).send({ message: "Usuario inexistente" });
+    }
+    res.send({ data: user });
   } catch (err) {
     res.status(500).send({ message: "Error en el servidor" });
   }
