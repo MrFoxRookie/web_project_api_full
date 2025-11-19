@@ -7,6 +7,8 @@ const { login, createUser } = require("./controllers/users");
 const usersRouter = require("./routes/users");
 const cardsRouter = require("./routes/cards");
 
+const { auth } = require("./middlewares/auth");
+
 const app = express();
 const { PORT = 3000 } = process.env;
 
@@ -20,13 +22,15 @@ app.use(express.json());
 app.post("/signin", login);
 app.post("/signup", createUser);
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: "68ed695234846756829d51b2",
-  };
+// app.use((req, res, next) => {
+//   req.user = {
+//     _id: "68ed695234846756829d51b2",
+//   };
 
-  next();
-});
+//   next();
+// });
+
+app.use(auth);
 
 app.use("/", usersRouter);
 app.use("/", cardsRouter);
