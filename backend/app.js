@@ -1,6 +1,7 @@
 const express = require("express");
 const path = require("path");
 const mongoose = require("mongoose");
+const cors = require("cors");
 
 const { login, createUser } = require("./controllers/users");
 
@@ -10,12 +11,20 @@ const cardsRouter = require("./routes/cards");
 const { auth } = require("./middlewares/auth");
 
 const app = express();
-const { PORT = 3000 } = process.env;
+const { PORT = 3001 } = process.env;
 
 mongoose.connect("mongodb://localhost:27017/aroundb", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
+
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 app.use(express.json());
 
