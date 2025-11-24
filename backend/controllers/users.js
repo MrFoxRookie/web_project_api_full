@@ -13,24 +13,19 @@ module.exports.getAllUsers = (req, res) => {
     .catch((err) => res.status(500).send({ message: "Error del servidor" }));
 }; //Verificado
 
-module.exports.getUser = (req, res) => {
+module.exports.getUser = (req, res, next) => {
   User.findById(req.params.userId)
-    .orFail()
+    .orFail(() => new NotFoundError("Id no coincide con ningún usuario"))
     .then((user) => res.send({ data: user }))
     .catch((err) => {
-      if (err.name === "DocumentNotFoundError") {
-        return res
-          .status(404)
-          .send({ message: "Id no coincide con ningún usuario" });
-      }
       if (err.name === "CastError") {
-        return res.status(400).send({ message: "Formato del Id inválido3" });
+        return next(new BadRequestError("Formato del Id inválido"));
       }
-      res.status(500).send({ message: "Error del servidor" });
+      return next(err);
     });
-}; //Verificado
+}; //Verificado//
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const { name, about, avatar, email, password } = req.body;
   bcrypt
     .hash(password, 10)
@@ -38,13 +33,18 @@ module.exports.createUser = (req, res) => {
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === "ValidationError") {
-        return res.status(400).send({
-          message: "Formato para la información del usuario invalidos",
-        });
+        return next(
+          new BadRequestError(
+            "Formato para la información del usuario invalido"
+          )
+        );
       }
-      res.status(500).send({ message: "Error del servidor" });
+      if (err.code === 11000) {
+        return next(new ConflictError("El email ya está registrado"));
+      }
+      return next(err);
     });
-}; //Verificado
+}; //Verificado//
 
 // module.exports.getUser = (req, res, next) => {
 //   User.findById(req.params.userId)
@@ -58,32 +58,32 @@ module.exports.createUser = (req, res) => {
 //     });
 // };
 
-module.exports.updateUser = (req, res) => {
+module.exports.updateUser = (req, res, next) => {
   User.findByIdAndUpdate(
     req.user._id,
     { name: req.body.name, about: req.body.about },
     {
       new: true,
       runValidators: true,
-      upsert: true,
+      upsert: false,
     }
   )
-    .orFail()
+    .orFail(() => new NotFoundError("Id no coincide con ningún usuario"))
     .then((user) => res.send({ data: user }))
     .catch((err) => {
-      if (err.name === "DocumentNotFoundError") {
-        return res
-          .status(404)
-          .send({ message: "Id no coincide con ningún usuario" });
-      }
       if (err.name === "CastError") {
-        return res.status(400).send({ message: "Formato del Id inválido" });
+        return next(new BadRequestError("Formato del Id inválido"));
       }
-      res.status(500).send({ message: "Error del servidor" });
+      if (err.name === "ValidationError") {
+        return next(
+          new BadRequestError("Datos inválidos para actualizar el usuario")
+        );
+      }
+      return next(err);
     });
-}; //Verificado
+}; //Verificado//
 
-module.exports.updateUserAvatar = (req, res) => {
+module.exports.updateUserAvatar = (req, res, next) => {
   User.findByIdAndUpdate(
     req.user._id,
     { avatar: req.body.avatar },
@@ -93,14 +93,9 @@ module.exports.updateUserAvatar = (req, res) => {
       upsert: true,
     }
   )
-    .orFail()
+    .orFail(() => new NotFoundError("Id no coincide con ningún usuario"))
     .then((user) => res.send({ data: user }))
     .catch((err) => {
-      if (err.name === "DocumentNotFoundError") {
-        return res
-          .status(404)
-          .send({ message: "Id no coincide con ningún usuario" });
-      }
       if (err.name === "CastError") {
         return res.status(400).send({ message: "Formato del Id inválido" });
       }
