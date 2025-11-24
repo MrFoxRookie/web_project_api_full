@@ -21,7 +21,7 @@ mongoose.connect("mongodb://localhost:27017/aroundb", {
 app.use(
   cors({
     origin: "http://localhost:3000",
-    methods: ["GET", "POST", "PATCH", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );

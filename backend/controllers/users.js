@@ -1,6 +1,11 @@
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const NotFoundError = require("../errors/not-found-error");
+const BadRequestError = require("../errors/bad-request-error");
+const UnauthorizedError = require("../errors/unauthorized-error");
+const ForbiddenError = require("../errors/forbidden-error");
+const ConflictError = require("../errors/conflict-error");
 
 module.exports.getAllUsers = (req, res) => {
   User.find({})
@@ -40,6 +45,18 @@ module.exports.createUser = (req, res) => {
       res.status(500).send({ message: "Error del servidor" });
     });
 }; //Verificado
+
+// module.exports.getUser = (req, res, next) => {
+//   User.findById(req.params.userId)
+//     .orFail(() => new NotFoundError('Id no coincide con ningún usuario'))
+//     .then((user) => res.send({ data: user }))
+//     .catch((err) => {
+//       if (err.name === 'CastError') {
+//         return next(new BadRequestError('Formato del Id inválido'));
+//       }
+//       return next(err); // siempre pasa todo al manejador central
+//     });
+// };
 
 module.exports.updateUser = (req, res) => {
   User.findByIdAndUpdate(
