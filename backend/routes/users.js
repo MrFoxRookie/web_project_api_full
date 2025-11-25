@@ -8,9 +8,14 @@ const {
   getCurrentUser,
 } = require("../controllers/users");
 const { celebrate, Joi } = require("celebrate");
+const validator = require("validator");
 
-const urlRegex =
-  /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/;
+const validateURL = (value, helpers) => {
+  if (validator.isURL(value)) {
+    return value;
+  }
+  return helpers.error("string.uri");
+};
 
 router.get("/users", getAllUsers);
 router.get("/users/me", getCurrentUser);
@@ -40,7 +45,7 @@ router.patch(
   "/users/me/avatar",
   celebrate({
     body: Joi.object().keys({
-      avatar: Joi.string().pattern(urlRegex).required(),
+      avatar: Joi.string().custom(validateURL).required(),
     }),
   }),
   updateUserAvatar
