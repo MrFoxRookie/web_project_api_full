@@ -1,94 +1,81 @@
 const Card = require("../models/card");
+const NotFoundError = require("../errors/not-found-error");
+const BadRequestError = require("../errors/bad-request-error");
+const UnauthorizedError = require("../errors/unauthorized-error");
+const ForbiddenError = require("../errors/forbidden-error");
+const ConflictError = require("../errors/conflict-error");
 
-module.exports.getAllCards = (req, res) => {
+module.exports.getAllCards = (req, res, next) => {
   Card.find({})
     .populate("owner")
     .then((cards) => res.send({ data: cards }))
-    .catch((err) => res.status(500).send({ message: "Error del servidor" }));
+    .catch(next);
 }; //Verificado//
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   Card.create({ name, link, owner: req.user._id })
     .then((card) => res.send({ data: card }))
     .catch((err) => {
       if (err.name === "ValidationError") {
-        return res.status(400).send({ message: "Datos inválidos" });
+        return next(new BadRequestError("Datos inválidos"));
       }
-      res.status(500).send({ message: "Error del servidor" });
+      return next(err);
     });
 }; //Verificado//
 
-module.exports.removeCard = (req, res) => {
+module.exports.removeCard = (req, res, next) => {
   const userId = req.user._id;
   Card.findById(req.params.cardId)
-    .orFail()
+    .orFail(() => new NotFoundError("Id no coincide con ninguna carta"))
     .then((card) => {
       if (card.owner.toString() !== userId) {
-        return res.status(403).send({
-          message:
-            "No tienes los permisos necesarios para eliminar esta tarjeta",
-        });
+        return next(
+          new ForbiddenError(
+            "No tienes los permisos necesarios para eliminar esta tarjeta"
+          )
+        );
       }
-
       return Card.findByIdAndDelete(req.params.cardId).then(() => {
         res.send({ data: card });
       });
     })
     .catch((err) => {
-      if (err.name === "DocumentNotFoundError") {
-        return res
-          .status(404)
-          .send({ message: "Id no coincide con ninguna carta" });
-      }
-
       if (err.name === "CastError") {
-        return res.status(400).send({ message: "Formato del Id invalido" });
+        return next(new BadRequestError("Formato del Id inválido"));
       }
-      res.status(500).send({ message: "Error del servidor" });
+      return next(err);
     });
 }; //Verificado//
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true }
   )
-    .orFail()
+    .orFail(() => new NotFoundError("Id no coincide con ninguna carta"))
     .then((card) => res.send({ data: card }))
     .catch((err) => {
-      if (err.name === "DocumentNotFoundError") {
-        return res
-          .status(404)
-          .send({ message: "Id no coincide con ninguna carta" });
-      }
-
       if (err.name === "CastError") {
-        return res.status(400).send({ message: "Formato del Id invalido" });
+        return next(new BadRequestError("Formato del Id inválido"));
       }
-      res.status(500).send({ message: "Error del servidor" });
+      return next(err);
     });
-}; //Verificado
+}; //Verificado//
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
     { new: true }
   )
-    .orFail()
+    .orFail(() => new NotFoundError("Id no coincide con ninguna carta"))
     .then((card) => res.send({ data: card }))
     .catch((err) => {
-      if (err.name === "DocumentNotFoundError") {
-        return res
-          .status(404)
-          .send({ message: "Id no coincide con ninguna carta" });
-      }
-
       if (err.name === "CastError") {
-        return res.status(400).send({ message: "Formato del Id invalido" });
+        return next(new BadRequestError("Formato del Id inválido"));
       }
-      res.status(500).send({ message: "Error del servidor" });
+      return next(err);
     });
 }; //Verificado
