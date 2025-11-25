@@ -2,13 +2,11 @@ const express = require("express");
 const path = require("path");
 const mongoose = require("mongoose");
 const cors = require("cors");
-
 const { login, createUser } = require("./controllers/users");
-
 const usersRouter = require("./routes/users");
 const cardsRouter = require("./routes/cards");
-
 const { auth } = require("./middlewares/auth");
+const { celebrate, Joi } = require("celebrate");
 
 const app = express();
 const { PORT = 3001 } = process.env;
@@ -28,8 +26,29 @@ app.use(
 
 app.use(express.json());
 
-app.post("/signin", login);
-app.post("/signup", createUser);
+app.post(
+  "/signin",
+  celebrate({
+    body: Joi.object().keys({
+      email: Joi.string().email().required(),
+      password: Joi.string().required(),
+    }),
+  }),
+  login
+);
+
+// app.post("/signup", createUser);
+
+app.post(
+  "/signup",
+  celebrate({
+    body: Joi.object().keys({
+      email: Joi.string().email().required(),
+      password: Joi.string().required(),
+    }),
+  }),
+  createUser
+);
 
 app.use(auth);
 
