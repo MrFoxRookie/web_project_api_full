@@ -7,10 +7,10 @@ const UnauthorizedError = require("../errors/unauthorized-error");
 const ForbiddenError = require("../errors/forbidden-error");
 const ConflictError = require("../errors/conflict-error");
 
-module.exports.getAllUsers = (req, res) => {
+module.exports.getAllUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send({ data: users }))
-    .catch((err) => res.status(500).send({ message: "Error del servidor" }));
+    .catch(next);
 }; //Verificado
 
 module.exports.getUser = (req, res, next) => {
@@ -46,18 +46,6 @@ module.exports.createUser = (req, res, next) => {
     });
 }; //Verificado//
 
-// module.exports.getUser = (req, res, next) => {
-//   User.findById(req.params.userId)
-//     .orFail(() => new NotFoundError('Id no coincide con ningún usuario'))
-//     .then((user) => res.send({ data: user }))
-//     .catch((err) => {
-//       if (err.name === 'CastError') {
-//         return next(new BadRequestError('Formato del Id inválido'));
-//       }
-//       return next(err); // siempre pasa todo al manejador central
-//     });
-// };
-
 module.exports.updateUser = (req, res, next) => {
   User.findByIdAndUpdate(
     req.user._id,
@@ -90,80 +78,56 @@ module.exports.updateUserAvatar = (req, res, next) => {
     {
       new: true,
       runValidators: true,
-      upsert: true,
+      upsert: false,
     }
   )
     .orFail(() => new NotFoundError("Id no coincide con ningún usuario"))
     .then((user) => res.send({ data: user }))
     .catch((err) => {
       if (err.name === "CastError") {
-        return res.status(400).send({ message: "Formato del Id inválido" });
+        return next(new BadRequestError("Formato del Id inválido"));
       }
-      res.status(500).send({ message: "Error del servidor" });
+      if (err.name === "ValidationError") {
+        return next(
+          new BadRequestError("El formato del link del avatar es inválido")
+        );
+      }
+      return next(err);
     });
 }; //Verificado//
 
-module.exports.login = async (req, res) => {
+module.exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
-      return res
-        .status(401)
-        .send({ message: "Contraseña o correo electrónico incorrecto" });
+      return next(
+        new UnauthorizedError("Contraseña o correo electrónico incorrecto")
+      );
     }
     const matched = await bcrypt.compare(password, user.password);
     if (!matched) {
-      return res
-        .status(401)
-        .send({ message: "Contraseña o correo electrónico incorrecto" });
+      return next(
+        new UnauthorizedError("Contraseña o correo electrónico incorrecto")
+      );
     }
     const token = jwt.sign({ _id: user._id }, "string-random", {
       expiresIn: "7d",
     });
     res.send({ token });
   } catch (err) {
-    res.status(500).send({ message: "Error en el servidor" });
+    return next(err);
   }
-};
+}; //Verificado//
 
-module.exports.getCurrentUser = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(404).send({ message: "Usuario inexistente" });
-    }
-    res.send({ data: user });
-  } catch (err) {
-    res.status(500).send({ message: "Error en el servidor" });
-  }
-};
-
-// module.exports.login = (req, res) => {
-//   const { email, password } = req.body;
-//   User.findOne({ email })
-//     .select("+password") //recordar que esto es para forzar a Mongoose a dar el password
-//     .then((user) => {
-//       if (!user) {
-//         return Promise.reject(
-//           new Error("Contraseña o correo electrónico incorrecto")
-//         );
-//       }
-//       return bcrypt
-//         .compare(password, user.password)
-//         .then((matched) => {
-//           if (!matched) {
-//             return Promise.reject(
-//               new Error("Contraseña o correo electrónico incorrecto")
-//             );
-//           }
-//           const token = jwt.sign({ _id: user._id }, "string-random", {
-//             expiresIn: "7d",
-//           });
-//           res.send({ token });
-//         })
-//         .catch((err) => {
-//           res.status(401).send({ message: err.message });
-//         });
-//     });
-// };
+module.exports.getCurrentUser = (req, res, next) => {
+  User.findById(req.user._id)
+    .orFail(() => new NotFoundError("Usuario inexistente"))
+    .then((user) => res.send({ data: user }))
+    .catch((err) => {
+      if (err.name === "CastError") {
+        return next(new BadRequestError("Formato del Id inválido"));
+      }
+      return next(err);
+    });
+}; //Verificado
