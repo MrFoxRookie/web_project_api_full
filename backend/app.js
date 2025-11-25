@@ -6,7 +6,8 @@ const { login, createUser } = require("./controllers/users");
 const usersRouter = require("./routes/users");
 const cardsRouter = require("./routes/cards");
 const { auth } = require("./middlewares/auth");
-const { celebrate, Joi } = require("celebrate");
+const { celebrate, Joi, errors } = require("celebrate");
+const { requestLogger, errorLogger } = require("./middlewares/logger");
 
 const app = express();
 const { PORT = 3001 } = process.env;
@@ -26,6 +27,8 @@ app.use(
 
 app.use(express.json());
 
+app.use(requestLogger); // habilitar el logger de solicitud
+
 app.post(
   "/signin",
   celebrate({
@@ -36,8 +39,6 @@ app.post(
   }),
   login
 );
-
-// app.post("/signup", createUser);
 
 app.post(
   "/signup",
@@ -54,6 +55,9 @@ app.use(auth);
 
 app.use("/", usersRouter);
 app.use("/", cardsRouter);
+
+app.use(errorLogger);
+app.use(errors());
 
 app.use((err, req, res, next) => {
   const { statusCode = 500, message } = err;
