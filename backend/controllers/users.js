@@ -1,6 +1,7 @@
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { NODE_ENV, JWT_SECRET } = process.env;
 const NotFoundError = require("../errors/not-found-error");
 const BadRequestError = require("../errors/bad-request-error");
 const UnauthorizedError = require("../errors/unauthorized-error");
@@ -111,9 +112,11 @@ module.exports.login = async (req, res, next) => {
         new UnauthorizedError("Contraseña o correo electrónico incorrecto")
       );
     }
-    const token = jwt.sign({ _id: user._id }, "string-random", {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign(
+      { _id: user._id },
+      NODE_ENV === "production" ? JWT_SECRET : "string-de-desarrollo",
+      { expiresIn: "7d" }
+    );
     res.send({ token });
   } catch (err) {
     return next(err);
