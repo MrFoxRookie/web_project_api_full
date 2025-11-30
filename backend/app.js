@@ -27,7 +27,7 @@ app.use(
 
 app.use(express.json());
 
-app.use(requestLogger); // habilitar el logger de solicitud
+app.use(requestLogger);
 
 app.post(
   "/signin",

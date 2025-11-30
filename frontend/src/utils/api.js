@@ -175,5 +175,5 @@ class Api {
   }
 }
 
-const baseUrl = "http://localhost:3001";
+const baseUrl = import.meta.env.VITE_API_URL;
 export const api = new Api(baseUrl);
