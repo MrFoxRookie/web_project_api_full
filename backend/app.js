@@ -19,7 +19,10 @@ mongoose.connect("mongodb://localhost:27017/aroundb", {
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: [
+      "http://localhost:3000",
+      "https://ztatripletenproject.macrofox.org",
+    ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
