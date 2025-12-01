@@ -175,5 +175,5 @@ class Api {
   }
 }
 
-const baseUrl = "http://localhost:3000";
+const baseUrl = "api.ztatripletenproject.macrofox.org";
 export const api = new Api(baseUrl);
