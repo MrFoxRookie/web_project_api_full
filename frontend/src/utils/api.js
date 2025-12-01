@@ -175,5 +175,5 @@ class Api {
   }
 }
 
-const baseUrl = "http://localhost:3001";
+const baseUrl = "http://localhost:3000";
 export const api = new Api(baseUrl);
